@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.saber.okhttptest.MainActivity">
+
+    <ProgressBar
+        android:id="@+id/pb_upload"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="0"
+        />
+    <Button
+        android:layout_below="@+id/pb_upload"
+        android:id="@+id/btn_download_images"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Download images" />
+</RelativeLayout>
