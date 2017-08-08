@@ -4,7 +4,7 @@ package com.example.saber.okhttptest.interfaze;
  * Created by saber on 2017/7/12.
  */
 
-public interface IOkHttpDownloadcallback {
+public interface IOkHttpDownloadcallback extends IOkHttpUpdate {
 
     /**
      * 显示进度

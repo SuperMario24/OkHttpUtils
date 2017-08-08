@@ -2,9 +2,12 @@ package com.example.saber.okhttptest.utils;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.example.saber.okhttptest.interfaze.IOkHttpDownloadcallback;
 import com.example.saber.okhttptest.interfaze.IOkHttpOnLoadcallback;
+import com.example.saber.okhttptest.interfaze.IOkHttpUpdate;
+import com.google.gson.Gson;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -121,13 +124,74 @@ public class OkHttpUtils {
                     NormalUtils.close(in);
                     NormalUtils.close(fos);
                 }
-                callback.onDownloadSuccessed();
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onDownloadSuccessed();
+                    }
+                });
+
             }
         });
     }
 
 
-    public void onLoad(Class<?> clazz,String url,IOkHttpOnLoadcallback callback){
+    /**
+     * 返回一个实体类
+     * @param clazz
+     * @param url
+     * @param callback
+     */
+    public void onLoad(final Class<?> clazz, String url, final IOkHttpOnLoadcallback callback){
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        //构建进度监听
+        ProgressResponseBody.ProgressListener progressListener = createListener(callback);
+
+        //创建OkHttpClient对象并拦截ResponseBody
+        OkHttpClient okHttpClient = makeNewProgressResponseBody(progressListener);
+
+        //执行请求
+        Call call = okHttpClient.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.loadError();
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                //检查是否依赖Gson
+                boolean hasDependencyGson;
+                try {
+                    Class.forName("com.google.gson.Gson");
+                    hasDependencyGson = true;
+                } catch (ClassNotFoundException e) {
+                    hasDependencyGson = false;
+                }
+                if(!hasDependencyGson){
+                    throw new IllegalStateException("Must be dependency Gson");
+                }
+                //封装成实体类
+                Gson gson = new Gson();
+                final Object object = gson.fromJson(response.body().string(),clazz);
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onLoadSuccess(object);
+                    }
+                });
+
+            }
+        });
 
     }
 
@@ -159,7 +223,7 @@ public class OkHttpUtils {
      * 构建进度监听
      * @param callback
      */
-    private ProgressResponseBody.ProgressListener createListener(final IOkHttpDownloadcallback callback) {
+    private ProgressResponseBody.ProgressListener createListener(final IOkHttpUpdate callback) {
         final ProgressResponseBody.ProgressListener progressListener = new ProgressResponseBody.ProgressListener() {
             @Override
             public void update(final long bytesRead, final long contentLength, final boolean done) {
@@ -167,6 +231,8 @@ public class OkHttpUtils {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        Log.d(TAG,"bytesRead:"+bytesRead);
+                        Log.d(TAG,"contentLength:"+contentLength);
                         callback.onUpdate(bytesRead,contentLength,done);
                     }
                 });

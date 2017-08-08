@@ -9,10 +9,16 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
 import com.example.saber.okhttptest.interfaze.IOkHttpDownloadcallback;
+import com.example.saber.okhttptest.interfaze.IOkHttpOnLoadcallback;
+import com.example.saber.okhttptest.utils.DoubanContentResp;
 import com.example.saber.okhttptest.utils.OkHttpUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,6 +30,10 @@ public class MainActivity extends AppCompatActivity {
     private Button btnDownloadImages;
     private ProgressBar pbUpload;
 
+    private Button btnLoad;
+    private ProgressBar pbOnload;
+    private WebView webView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +42,36 @@ public class MainActivity extends AppCompatActivity {
 
         pbUpload = (ProgressBar) findViewById(R.id.pb_upload);
         btnDownloadImages = (Button) findViewById(R.id.btn_download_images);
+        pbOnload = (ProgressBar) findViewById(R.id.pb_onload);
+        btnLoad = (Button) findViewById(R.id.btn_on_load);
+        webView = (WebView) findViewById(R.id.web_view);
+        webView.setScrollbarFadingEnabled(true);
+        WebSettings settings = webView.getSettings();
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);//设置缓存
+        settings.setSupportZoom(true);// 支持放大网页功能
+        settings.setBuiltInZoomControls(false);// 支持缩小网页功能
+        settings.setJavaScriptEnabled(true);// 支持js
+        //开启DOM storage API功能
+        settings.setDomStorageEnabled(true);
+        //开启application Cache功能
+        settings.setAppCacheEnabled(false);
 
+        //不打开系统浏览器
+        webView.setWebViewClient(new WebViewClient());
+        //webView加载网页的进度条
+        webView.setWebChromeClient(new WebChromeClient(){
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                if (newProgress == 100) {
+                    // 网页加载完成
+                    pbOnload.setVisibility(View.GONE);
+                } else {
+                    // 加载中
+                    pbOnload.setProgress(newProgress);
+                }
+                super.onProgressChanged(view, newProgress);
+            }
+        });
 
 
 
@@ -80,6 +119,35 @@ public class MainActivity extends AppCompatActivity {
                     });
                 }
 
+            }
+        });
+
+
+        btnLoad.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                okHttpUtils.onLoad(DoubanContentResp.class, "https://moment.douban.com/api/post/178848", new IOkHttpOnLoadcallback() {
+                    @Override
+                    public void onUpdate(long bytesRead, long contentLength, boolean done) {
+                        //计算百分比并更新ProgressBar
+                        final int percent = (int) (100 * bytesRead / contentLength);
+                        pbUpload.setProgress(percent);
+                        Log.d(TAG,"下载进度："+(100*bytesRead)/contentLength+"%");
+                    }
+
+                    @Override
+                    public void loadError() {
+                        Log.e(TAG,"download failed");
+                    }
+
+                    @Override
+                    public void onLoadSuccess(Object object) {
+                        DoubanContentResp doubanContentResp = (DoubanContentResp) object;
+                        Log.d(TAG,"Author Name:"+doubanContentResp.getAuthor().getName());
+                        String shortUrl = doubanContentResp.getShort_url();
+                        webView.loadUrl(shortUrl);
+                    }
+                });
             }
         });
 

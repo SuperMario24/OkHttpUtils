@@ -1,10 +1,11 @@
 package com.example.saber.okhttptest.interfaze;
 
 /**
- * Created by saber on 2017/8/7.
+ * Created by saber on 2017/8/8.
  */
 
-public interface IOkHttpOnLoadcallback extends IOkHttpUpdate{
+public interface IOkHttpUpdate {
+
     /**
      * 显示进度
      * @param bytesRead 当前读取进度
@@ -13,12 +14,4 @@ public interface IOkHttpOnLoadcallback extends IOkHttpUpdate{
      */
     void onUpdate(long bytesRead, long contentLength, boolean done);
 
-    /**
-     * 加载失败
-     */
-    void loadError();
-    /**
-     * 加载成功
-     */
-    void onLoadSuccess(Object object);
 }

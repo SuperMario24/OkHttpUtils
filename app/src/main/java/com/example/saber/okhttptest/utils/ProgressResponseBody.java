@@ -37,8 +37,13 @@ public class ProgressResponseBody extends ResponseBody {
 
     @Override
     public BufferedSource source() {
-        return Okio.buffer(source(responseBody.source()));
+        if (bufferedSource == null) {
+            //包装
+            bufferedSource = Okio.buffer(source(responseBody.source()));
+        }
+        return bufferedSource;
     }
+
 
     private Source source(Source source) {
         return new ForwardingSource(source) {
@@ -64,6 +69,6 @@ public class ProgressResponseBody extends ResponseBody {
          * @param contentLength 响应总长度
          * @param done 是否读取完毕
          */
-        void update(long bytesRead,long contentLength,boolean done);
+        void update(long bytesRead, long contentLength, boolean done);
     }
 }
